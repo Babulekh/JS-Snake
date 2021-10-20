@@ -1,8 +1,8 @@
 const canvas = document.querySelector(".snake");
 const canvasLength = Math.min(window.innerHeight, window.innerWidth);
-const size = document.querySelector(".size");
 
-let lastPart;
+const size = document.querySelector(".size");
+const restart = document.querySelector(".restart");
 
 canvas.width = canvasLength;
 canvas.height = canvasLength;
@@ -10,9 +10,8 @@ canvas.height = canvasLength;
 class Snake {
     constructor() {
         this.direction = "down";
-        this.size = 1;
-        this.headCoords = { x: 0, y: 0 };
-        this.body = [{ x: 0, y: 0 }];
+        this.size = 0;
+        this.body = [];
     }
 }
 
@@ -63,14 +62,27 @@ class Game {
         
 
         this.start = function () {
-            this.setCell(this.snake.headCoords, 1);
+            for (let y = 0; y < this.cellsQuantity - 1; y++) {
+                for (let x = 0; x < this.cellsQuantity - 1; x++) {
+                    this.cells[y][x] = 0;
+                }
+            }
+
+
+            this.snake.body = [];
+            this.snake.body.push({ x: 0, y: 0 });
+            this.snake.size++;
+            this.setCell(this.snake.body[0], 1);
+
             this.draw();
             this.placeFood();
 
-            setInterval(this.tick.bind(this), 300);
+            this.timer = setInterval(this.tick.bind(this), 100);
         };
 
         this.draw = function () {
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
             for (const [y, row] of this.cells.entries()) {
                 for (const [x, cell] of row.entries()) {
                     this.fillCell(x, y, this.colors[cell]);
@@ -83,7 +95,6 @@ class Game {
             
             while (true) {
                 [x, y] = [Math.floor(Math.random() * (this.cellsQuantity - 1)), Math.floor(Math.random() * (this.cellsQuantity - 1))];
-
                 if (this.getCell({ x: x, y: y }) != 1) break;
             }
             
@@ -91,38 +102,45 @@ class Game {
         };
 
         this.tick = function () {
-            lastPart = this.snake.body.shift();
-            console.log(lastPart, this.snake.headCoords, lastPart == this.snake.headCoords);
+            let head = {x: this.snake.body[0].x, y: this.snake.body[0].y};
+            let lastPart = this.snake.body.pop();
             this.setCell(lastPart, 0);
 
             switch (this.snake.direction) {
                 case "up":
-                    this.snake.headCoords.y = this.snake.headCoords.y == 0 ? this.cellsQuantity - 1 : this.snake.headCoords.y - 1;
+                    head.y = head.y == 0 ? this.cellsQuantity - 1 : head.y - 1;
                     break;
                 case "down":
-                    this.snake.headCoords.y = this.snake.headCoords.y == this.cellsQuantity - 1 ? 0 : this.snake.headCoords.y + 1;
+                    head.y = head.y == this.cellsQuantity - 1 ? 0 : head.y + 1;
                     break;
                 case "left":
-                    this.snake.headCoords.x = this.snake.headCoords.x == 0 ? this.cellsQuantity - 1 : this.snake.headCoords.x - 1;
+                    head.x = head.x == 0 ? this.cellsQuantity - 1 : head.x - 1;
                     break;
                 case "right":
-                    this.snake.headCoords.x = this.snake.headCoords.x == this.cellsQuantity - 1 ? 0 : this.snake.headCoords.x + 1;
+                    head.x = head.x == this.cellsQuantity - 1 ? 0 : head.x + 1;
                     break;
             }
 
-            if (this.getCell(this.snake.headCoords) == 2) {
-                console.log("food");
-                this.snake.size++;
-                this.placeFood();
-                //this.snake.body.unshift(lastPart);
+
+            switch (this.getCell(head)) {
+                case 1:
+                    clearTimeout(this.timer);
+                    alert("gameover");
+                    return;
+                    break;
+                case 2:
+                    this.snake.size++;
+                    this.placeFood();
+                    this.snake.body.push(lastPart);
+                    break;
             }
 
-            this.snake.body.push(this.snake.headCoords);
+            this.snake.body.unshift(head);
 
             for(let part of this.snake.body) {
                 this.setCell(part, 1);
             }
-
+            
             this.draw();
 
             size.innerHTML = this.snake.size;
@@ -150,3 +168,5 @@ document.onkeydown = function (event) {
             break;
     }
 };
+
+restart.addEventListener("click", snake.start.bind(snake));
