@@ -1,7 +1,6 @@
 const canvas = document.querySelector(".snake");
 const canvasLength = Math.min(window.innerHeight, window.innerWidth);
 
-const size = document.querySelector(".size");
 const restart = document.querySelector(".restart");
 
 canvas.width = canvasLength;
@@ -10,8 +9,15 @@ canvas.height = canvasLength;
 class Snake {
     constructor() {
         this.direction = "down";
+        this.currentDirection = "down";
         this.size = 0;
         this.body = [];
+        this.directions = {
+            up: "down",
+            down: "up",
+            left: "right",
+            right: "left",
+        };
     }
 }
 
@@ -23,7 +29,7 @@ class Game {
         this.cellsQuantity = cellsQuantity;
         this.cellLength = this.canvas.width / this.cellsQuantity;
         this.cells = new Array(this.cellsQuantity).fill(0).map(() => new Array(this.cellsQuantity).fill(0)); //0 - empty cell; 1 - snake; 2 - food
-        
+
         this.colors = {
             empty: "rgb(200, 200, 0)",
             snake: "rgb(103, 65, 230)",
@@ -58,19 +64,16 @@ class Game {
 
         this.getCell = function ({ x: X, y: Y }) {
             return this.cells[Y][X];
-        }
-        
+        };
 
         this.start = function () {
-            for (let y = 0; y < this.cellsQuantity - 1; y++) {
-                for (let x = 0; x < this.cellsQuantity - 1; x++) {
+            for (let y = 0; y < this.cellsQuantity; y++) {
+                for (let x = 0; x < this.cellsQuantity; x++) {
                     this.cells[y][x] = 0;
                 }
             }
 
-
-            this.snake.body = [];
-            this.snake.body.push({ x: 0, y: 0 });
+            this.snake.body = [{ x: 0, y: 0 }];
             this.snake.size++;
             this.setCell(this.snake.body[0], 1);
 
@@ -91,20 +94,24 @@ class Game {
         };
 
         this.placeFood = function () {
-            let x, y
-            
+            let x, y;
+
             while (true) {
                 [x, y] = [Math.floor(Math.random() * (this.cellsQuantity - 1)), Math.floor(Math.random() * (this.cellsQuantity - 1))];
                 if (this.getCell({ x: x, y: y }) != 1) break;
             }
-            
-            this.setCell({x: x, y: y}, 2);
+
+            this.setCell({ x: x, y: y }, 2);
         };
 
         this.tick = function () {
-            let head = {x: this.snake.body[0].x, y: this.snake.body[0].y};
+            let head = { x: this.snake.body[0].x, y: this.snake.body[0].y };
             let lastPart = this.snake.body.pop();
             this.setCell(lastPart, 0);
+
+            if (this.snake.direction == this.snake.directions[this.snake.currentDirection]) {
+                this.snake.direction = this.snake.currentDirection;
+            }
 
             switch (this.snake.direction) {
                 case "up":
@@ -121,29 +128,26 @@ class Game {
                     break;
             }
 
-
-            switch (this.getCell(head)) {
-                case 1:
-                    clearTimeout(this.timer);
-                    alert("gameover");
-                    return;
-                    break;
-                case 2:
-                    this.snake.size++;
-                    this.placeFood();
-                    this.snake.body.push(lastPart);
-                    break;
-            }
-
             this.snake.body.unshift(head);
 
-            for(let part of this.snake.body) {
+            if (this.getCell(head) == 1) {
+                clearTimeout(this.timer);
+                alert("gameover");
+                return;
+            }
+
+            if (this.getCell(head) == 2) {
+                this.placeFood();
+                this.snake.body.push(lastPart);
+                this.snake.size++;
+            }
+
+            for (let part of this.snake.body) {
                 this.setCell(part, 1);
             }
-            
-            this.draw();
 
-            size.innerHTML = this.snake.size;
+            this.snake.currentDirection = this.snake.direction;
+            this.draw();
         };
     }
 }
