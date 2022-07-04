@@ -1,11 +1,25 @@
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
 }
 
 .app {
-    display: flex;
-    justify-content: center;
-    background: rgb(103, 65, 230);
+	display: flex;
+	justify-content: center;
+    align-items: center;
+	background: rgb(63, 68, 19);
+}
+
+.size {
+	padding: 30px;
+	font-size: 40px;
+	font-family: monospace;
+    color: rgb(85, 139, 163);
+}
+
+.restart {
+    padding: 15px;
+    border-radius: 500px;
+    margin-right: 10px;
 }
