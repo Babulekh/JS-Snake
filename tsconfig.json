@@ -7,7 +7,5 @@
     "target": "es2015",
     "outDir": ""
   },
-  "include": [
-    "src/game.ts"
-  ]
+  "include": ["src/*.ts"]
 }
