@@ -1,23 +1,76 @@
+var Direction;
+(function (Direction) {
+    Direction["Up"] = "up";
+    Direction["Down"] = "down";
+    Direction["Left"] = "left";
+    Direction["Right"] = "right";
+})(Direction || (Direction = {}));
+var CellType;
+(function (CellType) {
+    CellType["Empty"] = "rgb(255, 215, 0)";
+    CellType["Snake"] = "rgb(243, 135, 47)";
+    CellType["Food"] = "rgb(21, 178, 211)";
+})(CellType || (CellType = {}));
 class Snake {
     constructor() {
-        this.direction = "down" /* Directions.Down */;
-        this.size = 0;
+        this.direction = Direction.Down;
         this.body = [];
+    }
+    get size() {
+        return this.body.length;
     }
 }
 export class Game {
     constructor(canvas, cellsQuantity, sizeCounter) {
-        this.snake = new Snake();
         this.canvas = canvas;
-        this.context = this.canvas.getContext('2d');
-        this.sizeCounter = sizeCounter;
         this.cellsQuantity = cellsQuantity;
+        this.sizeCounter = sizeCounter;
         this.cellLength = this.canvas.width / this.cellsQuantity;
-        this.cells = new Array(this.cellsQuantity).fill("rgb(255, 215, 0)" /* CellTypes.Empty */).map(() => new Array(this.cellsQuantity).fill("rgb(255, 215, 0)" /* CellTypes.Empty */));
-        document.addEventListener('keydown', (event) => this.onKeyDown(event));
+        this.cells = Array.from({ length: this.cellsQuantity }, () => Array(this.cellsQuantity).fill(CellType.Empty));
+        this.snake = new Snake();
+        this.start = () => {
+            for (const row of this.cells) {
+                for (let x = 0; x < row.length; x++) {
+                    row[x] = CellType.Empty;
+                }
+            }
+            const initSnakeBody = { x: 0, y: 0 };
+            this.snake.body = [initSnakeBody];
+            this.sizeCounter.innerHTML = `Длина змейки: ${this.snake.size}`;
+            this.setCell(initSnakeBody, CellType.Snake);
+            this.draw();
+            this.placeFood();
+            clearInterval(this.timer);
+            this.timer = setInterval(() => this.tick(), 100);
+        };
+        this.onKeyDown = ({ code }) => {
+            switch (code) {
+                case 'KeyW':
+                case 'ArrowUp':
+                    this.snake.direction = Direction.Up;
+                    break;
+                case 'KeyS':
+                case 'ArrowDown':
+                    this.snake.direction = Direction.Down;
+                    break;
+                case 'KeyA':
+                case 'ArrowLeft':
+                    this.snake.direction = Direction.Left;
+                    break;
+                case 'KeyD':
+                case 'ArrowRight':
+                    this.snake.direction = Direction.Right;
+                    break;
+            }
+        };
+        document.addEventListener('keydown', this.onKeyDown);
+        const context = this.canvas.getContext('2d');
+        if (!context)
+            throw Error('Canvas 2D context is null');
+        this.context = context;
     }
     fillCell(x, y, fillStyle) {
-        let radius = this.cellLength / 10;
+        const radius = this.cellLength / 10;
         const [xCoord, yCoord] = [x * this.cellLength, y * this.cellLength];
         this.context.fillStyle = fillStyle;
         this.context.beginPath();
@@ -33,25 +86,15 @@ export class Game {
         this.context.fill();
     }
     setCell({ x, y }, value) {
-        this.cells[y][x] = value;
+        const row = this.cells[y];
+        if (!row)
+            throw Error("Row doesn't exist");
+        row[x] = value;
     }
     getCell({ x, y }) {
-        return this.cells[y][x];
-    }
-    start() {
-        for (let y = 0; y < this.cellsQuantity; y++) {
-            for (let x = 0; x < this.cellsQuantity; x++) {
-                this.cells[y][x] = "rgb(255, 215, 0)" /* CellTypes.Empty */;
-            }
-        }
-        this.snake.body = [{ x: 0, y: 0 }];
-        this.snake.size = 1;
-        this.sizeCounter.innerHTML = `Длина змейки: ${this.snake.size}`;
-        this.setCell(this.snake.body[0], "rgb(243, 135, 47)" /* CellTypes.Snake */);
-        this.draw();
-        this.placeFood();
-        clearInterval(this.timer);
-        this.timer = setInterval(() => this.tick(), 100);
+        var _a;
+        const cell = (_a = this.cells[y]) === null || _a === void 0 ? void 0 : _a[x];
+        return cell;
     }
     draw() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -65,64 +108,47 @@ export class Game {
         let x, y;
         while (true) {
             [x, y] = [Math.floor(Math.random() * (this.cellsQuantity - 1)), Math.floor(Math.random() * (this.cellsQuantity - 1))];
-            if (this.getCell({ x: x, y: y }) != "rgb(243, 135, 47)" /* CellTypes.Snake */)
+            if (this.getCell({ x: x, y: y }) != CellType.Snake)
                 break;
         }
-        this.setCell({ x, y }, "rgb(21, 178, 211)" /* CellTypes.Food */);
+        this.setCell({ x, y }, CellType.Food);
     }
     tick() {
-        const head = { x: this.snake.body[0].x, y: this.snake.body[0].y };
-        const lastPart = this.snake.body.pop();
-        this.setCell(lastPart, "rgb(255, 215, 0)" /* CellTypes.Empty */);
+        const head = this.snake.body[0] ? Object.assign({}, this.snake.body[0]) : undefined;
+        const tail = this.snake.body.pop();
+        if (tail)
+            this.setCell(tail, CellType.Empty);
+        if (!head)
+            return;
         switch (this.snake.direction) {
-            case "up" /* Directions.Up */:
-                head.y = head.y === 0 ? this.cellsQuantity - 1 : head.y - 1;
+            case Direction.Up:
+                head.y = (head.y + this.cellsQuantity - 1) % this.cellsQuantity;
                 break;
-            case "down" /* Directions.Down */:
-                head.y = head.y === this.cellsQuantity - 1 ? 0 : head.y + 1;
+            case Direction.Down:
+                head.y = (head.y + this.cellsQuantity + 1) % this.cellsQuantity;
                 break;
-            case "left" /* Directions.Left */:
-                head.x = head.x === 0 ? this.cellsQuantity - 1 : head.x - 1;
+            case Direction.Left:
+                head.x = (head.x + this.cellsQuantity - 1) % this.cellsQuantity;
                 break;
-            case "right" /* Directions.Right */:
-                head.x = head.x === this.cellsQuantity - 1 ? 0 : head.x + 1;
+            case Direction.Right:
+                head.x = (head.x + this.cellsQuantity + 1) % this.cellsQuantity;
                 break;
         }
         this.snake.body.unshift(head);
-        if (this.getCell(head) === "rgb(243, 135, 47)" /* CellTypes.Snake */) {
+        if (this.getCell(head) === CellType.Snake) {
             clearInterval(this.timer);
             alert('gameover');
             return;
         }
-        if (this.getCell(head) === "rgb(21, 178, 211)" /* CellTypes.Food */) {
-            this.snake.body.push(lastPart);
-            this.snake.size++;
+        if (this.getCell(head) === CellType.Food && tail) {
+            this.snake.body.push(tail);
             this.placeFood();
             this.sizeCounter.innerHTML = `Длина змейки: ${this.snake.size}`;
         }
-        for (let part of this.snake.body)
-            this.setCell(part, "rgb(243, 135, 47)" /* CellTypes.Snake */);
-        this.draw();
-    }
-    onKeyDown({ code }) {
-        switch (code) {
-            case 'KeyW':
-            case 'ArrowUp':
-                this.snake.direction = "up" /* Directions.Up */;
-                break;
-            case 'KeyS':
-            case 'ArrowDown':
-                this.snake.direction = "down" /* Directions.Down */;
-                break;
-            case 'KeyA':
-            case 'ArrowLeft':
-                this.snake.direction = "left" /* Directions.Left */;
-                break;
-            case 'KeyD':
-            case 'ArrowRight':
-                this.snake.direction = "right" /* Directions.Right */;
-                break;
+        for (const part of this.snake.body) {
+            this.setCell(part, CellType.Snake);
         }
+        this.draw();
     }
 }
 //# sourceMappingURL=classes.js.map

@@ -12,6 +12,7 @@ const enum CellType {
 }
 
 type Coordinate = { x: number; y: number };
+
 class Snake {
   direction = Direction.Down;
   body: Coordinate[] = [];
@@ -28,7 +29,7 @@ export class Game {
   private timer: number | undefined;
 
   constructor(private canvas: HTMLCanvasElement, private cellsQuantity: number, private sizeCounter: Element) {
-    document.addEventListener('keydown', (event) => this.onKeyDown(event));
+    document.addEventListener('keydown', this.onKeyDown);
 
     const context = this.canvas.getContext('2d');
     if (!context) throw Error('Canvas 2D context is null');
@@ -66,7 +67,7 @@ export class Game {
     return cell;
   }
 
-  start = (): void => {
+  start = () => {
     for (const row of this.cells) {
       for (let x = 0; x < row.length; x++) {
         row[x] = CellType.Empty;
@@ -110,23 +111,21 @@ export class Game {
     const head = this.snake.body[0] ? { ...this.snake.body[0] } : undefined;
     const tail = this.snake.body.pop();
 
-    if (tail) {
-      this.setCell(tail, CellType.Empty);
-    }
+    if (tail) this.setCell(tail, CellType.Empty);
 
     if (!head) return;
     switch (this.snake.direction) {
       case Direction.Up:
-        head.y = head.y === 0 ? this.cellsQuantity - 1 : head.y - 1;
+        head.y = (head.y + this.cellsQuantity - 1) % this.cellsQuantity;
         break;
       case Direction.Down:
-        head.y = head.y === this.cellsQuantity - 1 ? 0 : head.y + 1;
+        head.y = (head.y + this.cellsQuantity + 1) % this.cellsQuantity;
         break;
       case Direction.Left:
-        head.x = head.x === 0 ? this.cellsQuantity - 1 : head.x - 1;
+        head.x = (head.x + this.cellsQuantity - 1) % this.cellsQuantity;
         break;
       case Direction.Right:
-        head.x = head.x === this.cellsQuantity - 1 ? 0 : head.x + 1;
+        head.x = (head.x + this.cellsQuantity + 1) % this.cellsQuantity;
         break;
     }
 
@@ -151,7 +150,7 @@ export class Game {
     this.draw();
   }
 
-  private onKeyDown({ code }: KeyboardEvent): void {
+  private onKeyDown = ({ code }: KeyboardEvent) => {
     switch (code) {
       case 'KeyW':
       case 'ArrowUp':
@@ -170,5 +169,5 @@ export class Game {
         this.snake.direction = Direction.Right;
         break;
     }
-  }
+  };
 }

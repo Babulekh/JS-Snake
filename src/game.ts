@@ -2,9 +2,7 @@ import { Game } from './classes.js';
 
 const canvas = document.querySelector('.snake');
 if (!canvas) throw Error('No canvas element');
-if (!(canvas instanceof HTMLCanvasElement)) {
-  throw Error('Element with snake class is not a canvas');
-}
+if (!(canvas instanceof HTMLCanvasElement)) throw Error('Element with snake class is not a canvas');
 
 const canvasLength = Math.min(window.innerHeight, window.innerWidth);
 
