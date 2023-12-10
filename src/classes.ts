@@ -1,47 +1,44 @@
-const enum Directions {
+const enum Direction {
   Up = 'up',
   Down = 'down',
   Left = 'left',
   Right = 'right',
 }
 
-const enum CellTypes {
+const enum CellType {
   Empty = 'rgb(255, 215, 0)',
   Snake = 'rgb(243, 135, 47)',
   Food = 'rgb(21, 178, 211)',
 }
 
+type Coordinate = { x: number; y: number };
 class Snake {
-  direction: Directions = Directions.Down;
-  size: number = 0;
-  body: { x: number; y: number }[] = [];
+  direction = Direction.Down;
+  body: Coordinate[] = [];
+  get size() {
+    return this.body.length;
+  }
 }
 
 export class Game {
-  canvas: HTMLCanvasElement;
-  context: CanvasRenderingContext2D;
-  cellsQuantity: number;
-  cellLength: number;
-  cells: CellTypes[][];
-  snake: Snake = new Snake();
-  timer: number;
-  sizeCounter: Element;
+  private context: CanvasRenderingContext2D;
+  private cellLength = this.canvas.width / this.cellsQuantity;
+  private cells = Array.from({ length: this.cellsQuantity }, () => Array<CellType>(this.cellsQuantity).fill(CellType.Empty));
+  private snake = new Snake();
+  private timer: number | undefined;
 
-  constructor(canvas: HTMLCanvasElement, cellsQuantity: number, sizeCounter: Element) {
-    this.canvas = canvas;
-    this.context = this.canvas.getContext('2d');
-    this.sizeCounter = sizeCounter;
-
-    this.cellsQuantity = cellsQuantity;
-    this.cellLength = this.canvas.width / this.cellsQuantity;
-    this.cells = new Array(this.cellsQuantity).fill(CellTypes.Empty).map(() => new Array(this.cellsQuantity).fill(CellTypes.Empty));
-
+  constructor(private canvas: HTMLCanvasElement, private cellsQuantity: number, private sizeCounter: Element) {
     document.addEventListener('keydown', (event) => this.onKeyDown(event));
+
+    const context = this.canvas.getContext('2d');
+    if (!context) throw Error('Canvas 2D context is null');
+    this.context = context;
   }
 
-  fillCell(x: number, y: number, fillStyle: CellTypes): void {
-    let radius = this.cellLength / 10;
+  private fillCell(x: number, y: number, fillStyle: CellType): void {
+    const radius = this.cellLength / 10;
     const [xCoord, yCoord] = [x * this.cellLength, y * this.cellLength];
+
     this.context.fillStyle = fillStyle;
 
     this.context.beginPath();
@@ -57,34 +54,38 @@ export class Game {
     this.context.fill();
   }
 
-  setCell({ x, y }, value: CellTypes): void {
-    this.cells[y][x] = value;
+  private setCell({ x, y }: Coordinate, value: CellType): void {
+    const row = this.cells[y];
+    if (!row) throw Error("Row doesn't exist");
+
+    row[x] = value;
   }
 
-  getCell({ x, y }): CellTypes {
-    return this.cells[y][x];
+  private getCell({ x, y }: Coordinate): CellType | undefined {
+    const cell = this.cells[y]?.[x];
+    return cell;
   }
 
-  start(): void {
-    for (let y = 0; y < this.cellsQuantity; y++) {
-      for (let x = 0; x < this.cellsQuantity; x++) {
-        this.cells[y][x] = CellTypes.Empty;
+  start = (): void => {
+    for (const row of this.cells) {
+      for (let x = 0; x < row.length; x++) {
+        row[x] = CellType.Empty;
       }
     }
 
-    this.snake.body = [{ x: 0, y: 0 }];
-    this.snake.size = 1;
+    const initSnakeBody = { x: 0, y: 0 };
+    this.snake.body = [initSnakeBody];
     this.sizeCounter.innerHTML = `Длина змейки: ${this.snake.size}`;
-    this.setCell(this.snake.body[0], CellTypes.Snake);
+    this.setCell(initSnakeBody, CellType.Snake);
 
     this.draw();
     this.placeFood();
 
     clearInterval(this.timer);
     this.timer = setInterval(() => this.tick(), 100);
-  }
+  };
 
-  draw(): void {
+  private draw(): void {
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     for (const [y, row] of this.cells.entries()) {
@@ -94,75 +95,79 @@ export class Game {
     }
   }
 
-  placeFood(): void {
+  private placeFood(): void {
     let x: number, y: number;
 
     while (true) {
       [x, y] = [Math.floor(Math.random() * (this.cellsQuantity - 1)), Math.floor(Math.random() * (this.cellsQuantity - 1))];
-      if (this.getCell({ x: x, y: y }) != CellTypes.Snake) break;
+      if (this.getCell({ x: x, y: y }) != CellType.Snake) break;
     }
 
-    this.setCell({ x, y }, CellTypes.Food);
+    this.setCell({ x, y }, CellType.Food);
   }
 
-  tick(): void {
-    const head = { x: this.snake.body[0].x, y: this.snake.body[0].y };
-    const lastPart = this.snake.body.pop();
+  private tick(): void {
+    const head = this.snake.body[0] ? { ...this.snake.body[0] } : undefined;
+    const tail = this.snake.body.pop();
 
-    this.setCell(lastPart, CellTypes.Empty);
+    if (tail) {
+      this.setCell(tail, CellType.Empty);
+    }
 
+    if (!head) return;
     switch (this.snake.direction) {
-      case Directions.Up:
+      case Direction.Up:
         head.y = head.y === 0 ? this.cellsQuantity - 1 : head.y - 1;
         break;
-      case Directions.Down:
+      case Direction.Down:
         head.y = head.y === this.cellsQuantity - 1 ? 0 : head.y + 1;
         break;
-      case Directions.Left:
+      case Direction.Left:
         head.x = head.x === 0 ? this.cellsQuantity - 1 : head.x - 1;
         break;
-      case Directions.Right:
+      case Direction.Right:
         head.x = head.x === this.cellsQuantity - 1 ? 0 : head.x + 1;
         break;
     }
 
     this.snake.body.unshift(head);
 
-    if (this.getCell(head) === CellTypes.Snake) {
+    if (this.getCell(head) === CellType.Snake) {
       clearInterval(this.timer);
       alert('gameover');
       return;
     }
 
-    if (this.getCell(head) === CellTypes.Food) {
-      this.snake.body.push(lastPart);
-      this.snake.size++;
+    if (this.getCell(head) === CellType.Food && tail) {
+      this.snake.body.push(tail);
       this.placeFood();
       this.sizeCounter.innerHTML = `Длина змейки: ${this.snake.size}`;
     }
 
-    for (let part of this.snake.body) this.setCell(part, CellTypes.Snake);
+    for (const part of this.snake.body) {
+      this.setCell(part, CellType.Snake);
+    }
 
     this.draw();
   }
 
-  onKeyDown({ code }: KeyboardEvent): void {
+  private onKeyDown({ code }: KeyboardEvent): void {
     switch (code) {
       case 'KeyW':
       case 'ArrowUp':
-        this.snake.direction = Directions.Up;
+        this.snake.direction = Direction.Up;
         break;
       case 'KeyS':
       case 'ArrowDown':
-        this.snake.direction = Directions.Down;
+        this.snake.direction = Direction.Down;
         break;
       case 'KeyA':
       case 'ArrowLeft':
-        this.snake.direction = Directions.Left;
+        this.snake.direction = Direction.Left;
         break;
       case 'KeyD':
       case 'ArrowRight':
-        this.snake.direction = Directions.Right;
+        this.snake.direction = Direction.Right;
         break;
     }
   }
