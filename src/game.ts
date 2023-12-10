@@ -7,24 +7,24 @@ const sizeCounter = document.querySelector('.size');
 canvas.width = canvasLength;
 canvas.height = canvasLength;
 
+const enum Directions {
+  Up = 'up',
+  Down = 'down',
+  Left = 'left',
+  Right = 'right',
+}
+
 class Snake {
-  direction: string;
-  currentDirection: string;
+  direction: Directions;
+  currentDirection: Directions;
   size: number;
   body: { x: number; y: number }[][];
-  directions: any;
 
   constructor() {
-    this.direction = 'down';
-    this.currentDirection = 'down';
+    this.direction = Directions.Down;
+    this.currentDirection = Directions.Down;
     this.size = 0;
     this.body = [];
-    this.directions = {
-      up: 'down',
-      down: 'up',
-      left: 'right',
-      right: 'left',
-    };
   }
 }
 
@@ -35,7 +35,7 @@ class Game {
   cellLength: number;
   cells: number[][];
   colors: any;
-  snake: { direction: string; currentDirection: string; size: number; body: { x: number; y: number }[][]; directions: any };
+  snake: Snake;
   fillCell: (x: number, y: number, fillStyle: any) => void;
   setCell: ({ x, y }: { x: any; y: any }, value: string) => void;
   getCell: (coords: { x: number; y: number }) => string;
@@ -124,7 +124,7 @@ class Game {
     };
 
     this.placeFood = function () {
-      let x, y;
+      let x: number, y: number;
 
       while (true) {
         [x, y] = [Math.floor(Math.random() * (this.cellsQuantity - 1)), Math.floor(Math.random() * (this.cellsQuantity - 1))];
@@ -139,21 +139,21 @@ class Game {
       let lastPart = this.snake.body.pop();
       this.setCell(lastPart, 0);
 
-      if (this.snake.direction == this.snake.directions[this.snake.currentDirection]) {
+      if (this.snake.direction == this.snake.currentDirection) {
         this.snake.direction = this.snake.currentDirection;
       }
 
       switch (this.snake.direction) {
-        case 'up':
+        case Directions.Up:
           head.y = head.y == 0 ? this.cellsQuantity - 1 : head.y - 1;
           break;
-        case 'down':
+        case Directions.Down:
           head.y = head.y == this.cellsQuantity - 1 ? 0 : head.y + 1;
           break;
-        case 'left':
+        case Directions.Left:
           head.x = head.x == 0 ? this.cellsQuantity - 1 : head.x - 1;
           break;
-        case 'right':
+        case Directions.Right:
           head.x = head.x == this.cellsQuantity - 1 ? 0 : head.x + 1;
           break;
       }
@@ -190,16 +190,16 @@ snake.start();
 document.onkeydown = function (event) {
   switch (event.key) {
     case 'ArrowUp':
-      snake.snake.direction = 'up';
+      snake.snake.direction = Directions.Up;
       break;
     case 'ArrowDown':
-      snake.snake.direction = 'down';
+      snake.snake.direction = Directions.Down;
       break;
     case 'ArrowLeft':
-      snake.snake.direction = 'left';
+      snake.snake.direction = Directions.Left;
       break;
     case 'ArrowRight':
-      snake.snake.direction = 'right';
+      snake.snake.direction = Directions.Right;
       break;
   }
 };
