@@ -14,6 +14,12 @@ const enum Directions {
   Right = 'right',
 }
 
+const enum CellTypes {
+  Empty = 'rgb(255, 215, 0)',
+  Snake = 'rgb(243, 135, 47)',
+  Food = 'rgb(21, 178, 211)',
+}
+
 class Snake {
   direction: Directions = Directions.Down;
   currentDirection: Directions = Directions.Down;
@@ -26,15 +32,7 @@ class Game {
   context: CanvasRenderingContext2D;
   cellsQuantity: number;
   cellLength: number;
-  cells: number[][];
-  colors: any = {
-    empty: 'rgb(255, 215, 0)',
-    snake: 'rgb(243, 135, 47)',
-    food: 'rgb(21, 178, 211)',
-    0: 'rgb(255, 215, 0)',
-    1: 'rgb(243, 135, 47)',
-    2: 'rgb(21, 178, 211)',
-  };
+  cells: CellTypes[][];
   snake: Snake = new Snake();
   timer: number;
 
@@ -44,51 +42,46 @@ class Game {
 
     this.cellsQuantity = cellsQuantity;
     this.cellLength = this.canvas.width / this.cellsQuantity;
-    this.cells = new Array(this.cellsQuantity).fill(0).map(() => new Array(this.cellsQuantity).fill(0)); //0 - empty cell; 1 - snake; 2 - food
+    this.cells = new Array(this.cellsQuantity).fill(CellTypes.Empty).map(() => new Array(this.cellsQuantity).fill(CellTypes.Empty));
   }
 
-  fillCell(x: number, y: number, fillStyle = this.colors.empty): void {
+  fillCell(x: number, y: number, fillStyle = CellTypes.Empty): void {
     let radius = this.cellLength / 10;
+    const [xCoord, yCoord] = [x * this.cellLength, y * this.cellLength];
     this.context.fillStyle = fillStyle;
 
     this.context.beginPath();
-    this.context.moveTo(x * this.cellLength, y * this.cellLength + radius);
-    this.context.lineTo(x * this.cellLength, y * this.cellLength + this.cellLength - radius);
-    this.context.arcTo(x * this.cellLength, y * this.cellLength + this.cellLength, x * this.cellLength + radius, y * this.cellLength + this.cellLength, radius);
-    this.context.lineTo(x * this.cellLength + this.cellLength - radius, y * this.cellLength + this.cellLength);
-    this.context.arcTo(
-      x * this.cellLength + this.cellLength,
-      y * this.cellLength + this.cellLength,
-      x * this.cellLength + this.cellLength,
-      y * this.cellLength + this.cellLength - radius,
-      radius
-    );
-    this.context.lineTo(x * this.cellLength + this.cellLength, y * this.cellLength + radius);
-    this.context.arcTo(x * this.cellLength + this.cellLength, y * this.cellLength, x * this.cellLength + this.cellLength - radius, y * this.cellLength, radius);
-    this.context.lineTo(x * this.cellLength + radius, y * this.cellLength);
-    this.context.arcTo(x * this.cellLength, y * this.cellLength, x * this.cellLength, y * this.cellLength + radius, radius);
+    this.context.moveTo(xCoord, yCoord + radius);
+    this.context.lineTo(xCoord, yCoord + this.cellLength - radius);
+    this.context.arcTo(xCoord, yCoord + this.cellLength, xCoord + radius, yCoord + this.cellLength, radius);
+    this.context.lineTo(xCoord + this.cellLength - radius, yCoord + this.cellLength);
+    this.context.arcTo(xCoord + this.cellLength, yCoord + this.cellLength, xCoord + this.cellLength, yCoord + this.cellLength - radius, radius);
+    this.context.lineTo(xCoord + this.cellLength, yCoord + radius);
+    this.context.arcTo(xCoord + this.cellLength, yCoord, xCoord + this.cellLength - radius, yCoord, radius);
+    this.context.lineTo(xCoord + radius, yCoord);
+    this.context.arcTo(xCoord, yCoord, xCoord, yCoord + radius, radius);
     this.context.fill();
   }
 
-  setCell({ x, y }, value: number): void {
+  setCell({ x, y }, value: CellTypes): void {
     this.cells[y][x] = value;
   }
 
-  getCell({ x, y }): number {
+  getCell({ x, y }): CellTypes {
     return this.cells[y][x];
   }
 
   start(): void {
     for (let y = 0; y < this.cellsQuantity; y++) {
       for (let x = 0; x < this.cellsQuantity; x++) {
-        this.cells[y][x] = 0;
+        this.cells[y][x] = CellTypes.Empty;
       }
     }
 
     this.snake.body = [{ x: 0, y: 0 }];
     this.snake.size = 1;
     sizeCounter.innerHTML = `Длина змейки: ${this.snake.size}`;
-    this.setCell(this.snake.body[0], 1);
+    this.setCell(this.snake.body[0], CellTypes.Snake);
 
     this.draw();
     this.placeFood();
@@ -102,7 +95,7 @@ class Game {
 
     for (const [y, row] of this.cells.entries()) {
       for (const [x, cell] of row.entries()) {
-        this.fillCell(x, y, this.colors[cell]);
+        this.fillCell(x, y, cell);
       }
     }
   }
@@ -112,16 +105,16 @@ class Game {
 
     while (true) {
       [x, y] = [Math.floor(Math.random() * (this.cellsQuantity - 1)), Math.floor(Math.random() * (this.cellsQuantity - 1))];
-      if (this.getCell({ x: x, y: y }) != 1) break;
+      if (this.getCell({ x: x, y: y }) != CellTypes.Snake) break;
     }
 
-    this.setCell({ x: x, y: y }, 2);
+    this.setCell({ x: x, y: y }, CellTypes.Food);
   }
 
   tick(): void {
     let head = { x: this.snake.body[0].x, y: this.snake.body[0].y };
     let lastPart = this.snake.body.pop();
-    this.setCell(lastPart, 0);
+    this.setCell(lastPart, CellTypes.Empty);
 
     if (this.snake.direction == this.snake.currentDirection) {
       this.snake.direction = this.snake.currentDirection;
@@ -144,13 +137,13 @@ class Game {
 
     this.snake.body.unshift(head);
 
-    if (this.getCell(head) == 1) {
+    if (this.getCell(head) == CellTypes.Snake) {
       clearInterval(this.timer);
       alert('gameover');
       return;
     }
 
-    if (this.getCell(head) == 2) {
+    if (this.getCell(head) == CellTypes.Food) {
       this.placeFood();
       this.snake.body.push(lastPart);
       this.snake.size++;
@@ -158,7 +151,7 @@ class Game {
     }
 
     for (let part of this.snake.body) {
-      this.setCell(part, 1);
+      this.setCell(part, CellTypes.Snake);
     }
 
     this.snake.currentDirection = this.snake.direction;

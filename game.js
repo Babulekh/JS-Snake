@@ -14,34 +14,27 @@ class Snake {
 }
 class Game {
     constructor(canvas, cellsQuantity = 11) {
-        this.colors = {
-            empty: 'rgb(255, 215, 0)',
-            snake: 'rgb(243, 135, 47)',
-            food: 'rgb(21, 178, 211)',
-            0: 'rgb(255, 215, 0)',
-            1: 'rgb(243, 135, 47)',
-            2: 'rgb(21, 178, 211)',
-        };
         this.snake = new Snake();
         this.canvas = canvas;
         this.context = this.canvas.getContext('2d');
         this.cellsQuantity = cellsQuantity;
         this.cellLength = this.canvas.width / this.cellsQuantity;
-        this.cells = new Array(this.cellsQuantity).fill(0).map(() => new Array(this.cellsQuantity).fill(0)); //0 - empty cell; 1 - snake; 2 - food
+        this.cells = new Array(this.cellsQuantity).fill("rgb(255, 215, 0)" /* CellTypes.Empty */).map(() => new Array(this.cellsQuantity).fill("rgb(255, 215, 0)" /* CellTypes.Empty */));
     }
-    fillCell(x, y, fillStyle = this.colors.empty) {
+    fillCell(x, y, fillStyle = "rgb(255, 215, 0)" /* CellTypes.Empty */) {
         let radius = this.cellLength / 10;
+        const [xCoord, yCoord] = [x * this.cellLength, y * this.cellLength];
         this.context.fillStyle = fillStyle;
         this.context.beginPath();
-        this.context.moveTo(x * this.cellLength, y * this.cellLength + radius);
-        this.context.lineTo(x * this.cellLength, y * this.cellLength + this.cellLength - radius);
-        this.context.arcTo(x * this.cellLength, y * this.cellLength + this.cellLength, x * this.cellLength + radius, y * this.cellLength + this.cellLength, radius);
-        this.context.lineTo(x * this.cellLength + this.cellLength - radius, y * this.cellLength + this.cellLength);
-        this.context.arcTo(x * this.cellLength + this.cellLength, y * this.cellLength + this.cellLength, x * this.cellLength + this.cellLength, y * this.cellLength + this.cellLength - radius, radius);
-        this.context.lineTo(x * this.cellLength + this.cellLength, y * this.cellLength + radius);
-        this.context.arcTo(x * this.cellLength + this.cellLength, y * this.cellLength, x * this.cellLength + this.cellLength - radius, y * this.cellLength, radius);
-        this.context.lineTo(x * this.cellLength + radius, y * this.cellLength);
-        this.context.arcTo(x * this.cellLength, y * this.cellLength, x * this.cellLength, y * this.cellLength + radius, radius);
+        this.context.moveTo(xCoord, yCoord + radius);
+        this.context.lineTo(xCoord, yCoord + this.cellLength - radius);
+        this.context.arcTo(xCoord, yCoord + this.cellLength, xCoord + radius, yCoord + this.cellLength, radius);
+        this.context.lineTo(xCoord + this.cellLength - radius, yCoord + this.cellLength);
+        this.context.arcTo(xCoord + this.cellLength, yCoord + this.cellLength, xCoord + this.cellLength, yCoord + this.cellLength - radius, radius);
+        this.context.lineTo(xCoord + this.cellLength, yCoord + radius);
+        this.context.arcTo(xCoord + this.cellLength, yCoord, xCoord + this.cellLength - radius, yCoord, radius);
+        this.context.lineTo(xCoord + radius, yCoord);
+        this.context.arcTo(xCoord, yCoord, xCoord, yCoord + radius, radius);
         this.context.fill();
     }
     setCell({ x, y }, value) {
@@ -53,13 +46,13 @@ class Game {
     start() {
         for (let y = 0; y < this.cellsQuantity; y++) {
             for (let x = 0; x < this.cellsQuantity; x++) {
-                this.cells[y][x] = 0;
+                this.cells[y][x] = "rgb(255, 215, 0)" /* CellTypes.Empty */;
             }
         }
         this.snake.body = [{ x: 0, y: 0 }];
         this.snake.size = 1;
         sizeCounter.innerHTML = `Длина змейки: ${this.snake.size}`;
-        this.setCell(this.snake.body[0], 1);
+        this.setCell(this.snake.body[0], "rgb(243, 135, 47)" /* CellTypes.Snake */);
         this.draw();
         this.placeFood();
         clearInterval(this.timer);
@@ -69,7 +62,7 @@ class Game {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         for (const [y, row] of this.cells.entries()) {
             for (const [x, cell] of row.entries()) {
-                this.fillCell(x, y, this.colors[cell]);
+                this.fillCell(x, y, cell);
             }
         }
     }
@@ -77,15 +70,15 @@ class Game {
         let x, y;
         while (true) {
             [x, y] = [Math.floor(Math.random() * (this.cellsQuantity - 1)), Math.floor(Math.random() * (this.cellsQuantity - 1))];
-            if (this.getCell({ x: x, y: y }) != 1)
+            if (this.getCell({ x: x, y: y }) != "rgb(243, 135, 47)" /* CellTypes.Snake */)
                 break;
         }
-        this.setCell({ x: x, y: y }, 2);
+        this.setCell({ x: x, y: y }, "rgb(21, 178, 211)" /* CellTypes.Food */);
     }
     tick() {
         let head = { x: this.snake.body[0].x, y: this.snake.body[0].y };
         let lastPart = this.snake.body.pop();
-        this.setCell(lastPart, 0);
+        this.setCell(lastPart, "rgb(255, 215, 0)" /* CellTypes.Empty */);
         if (this.snake.direction == this.snake.currentDirection) {
             this.snake.direction = this.snake.currentDirection;
         }
@@ -104,19 +97,19 @@ class Game {
                 break;
         }
         this.snake.body.unshift(head);
-        if (this.getCell(head) == 1) {
+        if (this.getCell(head) == "rgb(243, 135, 47)" /* CellTypes.Snake */) {
             clearInterval(this.timer);
             alert('gameover');
             return;
         }
-        if (this.getCell(head) == 2) {
+        if (this.getCell(head) == "rgb(21, 178, 211)" /* CellTypes.Food */) {
             this.placeFood();
             this.snake.body.push(lastPart);
             this.snake.size++;
             sizeCounter.innerHTML = `Длина змейки: ${this.snake.size}`;
         }
         for (let part of this.snake.body) {
-            this.setCell(part, 1);
+            this.setCell(part, "rgb(243, 135, 47)" /* CellTypes.Snake */);
         }
         this.snake.currentDirection = this.snake.direction;
         this.draw();
