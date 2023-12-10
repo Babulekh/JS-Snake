@@ -7,13 +7,12 @@ canvas.height = canvasLength;
 class Snake {
     constructor() {
         this.direction = "down" /* Directions.Down */;
-        this.currentDirection = "down" /* Directions.Down */;
         this.size = 0;
         this.body = [];
     }
 }
 class Game {
-    constructor(canvas, cellsQuantity = 11) {
+    constructor(canvas, cellsQuantity) {
         this.snake = new Snake();
         this.canvas = canvas;
         this.context = this.canvas.getContext('2d');
@@ -21,7 +20,7 @@ class Game {
         this.cellLength = this.canvas.width / this.cellsQuantity;
         this.cells = new Array(this.cellsQuantity).fill("rgb(255, 215, 0)" /* CellTypes.Empty */).map(() => new Array(this.cellsQuantity).fill("rgb(255, 215, 0)" /* CellTypes.Empty */));
     }
-    fillCell(x, y, fillStyle = "rgb(255, 215, 0)" /* CellTypes.Empty */) {
+    fillCell(x, y, fillStyle) {
         let radius = this.cellLength / 10;
         const [xCoord, yCoord] = [x * this.cellLength, y * this.cellLength];
         this.context.fillStyle = fillStyle;
@@ -56,7 +55,7 @@ class Game {
         this.draw();
         this.placeFood();
         clearInterval(this.timer);
-        this.timer = setInterval(this.tick.bind(this), 100);
+        this.timer = setInterval(() => this.tick(), 100);
     }
     draw() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -73,65 +72,65 @@ class Game {
             if (this.getCell({ x: x, y: y }) != "rgb(243, 135, 47)" /* CellTypes.Snake */)
                 break;
         }
-        this.setCell({ x: x, y: y }, "rgb(21, 178, 211)" /* CellTypes.Food */);
+        this.setCell({ x, y }, "rgb(21, 178, 211)" /* CellTypes.Food */);
     }
     tick() {
-        let head = { x: this.snake.body[0].x, y: this.snake.body[0].y };
-        let lastPart = this.snake.body.pop();
+        const head = { x: this.snake.body[0].x, y: this.snake.body[0].y };
+        const lastPart = this.snake.body.pop();
         this.setCell(lastPart, "rgb(255, 215, 0)" /* CellTypes.Empty */);
-        if (this.snake.direction == this.snake.currentDirection) {
-            this.snake.direction = this.snake.currentDirection;
-        }
         switch (this.snake.direction) {
             case "up" /* Directions.Up */:
-                head.y = head.y == 0 ? this.cellsQuantity - 1 : head.y - 1;
+                head.y = head.y === 0 ? this.cellsQuantity - 1 : head.y - 1;
                 break;
             case "down" /* Directions.Down */:
-                head.y = head.y == this.cellsQuantity - 1 ? 0 : head.y + 1;
+                head.y = head.y === this.cellsQuantity - 1 ? 0 : head.y + 1;
                 break;
             case "left" /* Directions.Left */:
-                head.x = head.x == 0 ? this.cellsQuantity - 1 : head.x - 1;
+                head.x = head.x === 0 ? this.cellsQuantity - 1 : head.x - 1;
                 break;
             case "right" /* Directions.Right */:
-                head.x = head.x == this.cellsQuantity - 1 ? 0 : head.x + 1;
+                head.x = head.x === this.cellsQuantity - 1 ? 0 : head.x + 1;
                 break;
         }
         this.snake.body.unshift(head);
-        if (this.getCell(head) == "rgb(243, 135, 47)" /* CellTypes.Snake */) {
+        if (this.getCell(head) === "rgb(243, 135, 47)" /* CellTypes.Snake */) {
             clearInterval(this.timer);
             alert('gameover');
             return;
         }
-        if (this.getCell(head) == "rgb(21, 178, 211)" /* CellTypes.Food */) {
-            this.placeFood();
+        if (this.getCell(head) === "rgb(21, 178, 211)" /* CellTypes.Food */) {
             this.snake.body.push(lastPart);
             this.snake.size++;
+            this.placeFood();
             sizeCounter.innerHTML = `Длина змейки: ${this.snake.size}`;
         }
-        for (let part of this.snake.body) {
+        for (let part of this.snake.body)
             this.setCell(part, "rgb(243, 135, 47)" /* CellTypes.Snake */);
-        }
-        this.snake.currentDirection = this.snake.direction;
         this.draw();
     }
 }
 let snake = new Game(canvas, 21);
 snake.start();
-document.onkeydown = function (event) {
-    switch (event.key) {
+function onKeyDown({ code }) {
+    switch (code) {
+        case 'KeyW':
         case 'ArrowUp':
             snake.snake.direction = "up" /* Directions.Up */;
             break;
+        case 'KeyS':
         case 'ArrowDown':
             snake.snake.direction = "down" /* Directions.Down */;
             break;
+        case 'KeyA':
         case 'ArrowLeft':
             snake.snake.direction = "left" /* Directions.Left */;
             break;
+        case 'KeyD':
         case 'ArrowRight':
             snake.snake.direction = "right" /* Directions.Right */;
             break;
     }
-};
+}
+document.addEventListener('keydown', onKeyDown);
 restart.addEventListener('click', snake.start.bind(snake));
 //# sourceMappingURL=game.js.map
