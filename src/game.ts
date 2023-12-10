@@ -42,6 +42,8 @@ class Game {
     this.cellsQuantity = cellsQuantity;
     this.cellLength = this.canvas.width / this.cellsQuantity;
     this.cells = new Array(this.cellsQuantity).fill(CellTypes.Empty).map(() => new Array(this.cellsQuantity).fill(CellTypes.Empty));
+
+    document.addEventListener('keydown', (event) => this.onKeyDown(event));
   }
 
   fillCell(x: number, y: number, fillStyle: CellTypes): void {
@@ -150,32 +152,31 @@ class Game {
 
     this.draw();
   }
+
+  onKeyDown({ code }: KeyboardEvent): void {
+    switch (code) {
+      case 'KeyW':
+      case 'ArrowUp':
+        this.snake.direction = Directions.Up;
+        break;
+      case 'KeyS':
+      case 'ArrowDown':
+        this.snake.direction = Directions.Down;
+        break;
+      case 'KeyA':
+      case 'ArrowLeft':
+        this.snake.direction = Directions.Left;
+        break;
+      case 'KeyD':
+      case 'ArrowRight':
+        this.snake.direction = Directions.Right;
+        break;
+    }
+  }
 }
 
 let snake = new Game(canvas, 21);
 
 snake.start();
 
-function onKeyDown({ code }: KeyboardEvent): void {
-  switch (code) {
-    case 'KeyW':
-    case 'ArrowUp':
-      snake.snake.direction = Directions.Up;
-      break;
-    case 'KeyS':
-    case 'ArrowDown':
-      snake.snake.direction = Directions.Down;
-      break;
-    case 'KeyA':
-    case 'ArrowLeft':
-      snake.snake.direction = Directions.Left;
-      break;
-    case 'KeyD':
-    case 'ArrowRight':
-      snake.snake.direction = Directions.Right;
-      break;
-  }
-}
-
-document.addEventListener('keydown', onKeyDown);
 restart.addEventListener('click', snake.start.bind(snake));

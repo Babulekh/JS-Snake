@@ -19,6 +19,7 @@ class Game {
         this.cellsQuantity = cellsQuantity;
         this.cellLength = this.canvas.width / this.cellsQuantity;
         this.cells = new Array(this.cellsQuantity).fill("rgb(255, 215, 0)" /* CellTypes.Empty */).map(() => new Array(this.cellsQuantity).fill("rgb(255, 215, 0)" /* CellTypes.Empty */));
+        document.addEventListener('keydown', (event) => this.onKeyDown(event));
     }
     fillCell(x, y, fillStyle) {
         let radius = this.cellLength / 10;
@@ -108,29 +109,28 @@ class Game {
             this.setCell(part, "rgb(243, 135, 47)" /* CellTypes.Snake */);
         this.draw();
     }
+    onKeyDown({ code }) {
+        switch (code) {
+            case 'KeyW':
+            case 'ArrowUp':
+                this.snake.direction = "up" /* Directions.Up */;
+                break;
+            case 'KeyS':
+            case 'ArrowDown':
+                this.snake.direction = "down" /* Directions.Down */;
+                break;
+            case 'KeyA':
+            case 'ArrowLeft':
+                this.snake.direction = "left" /* Directions.Left */;
+                break;
+            case 'KeyD':
+            case 'ArrowRight':
+                this.snake.direction = "right" /* Directions.Right */;
+                break;
+        }
+    }
 }
 let snake = new Game(canvas, 21);
 snake.start();
-function onKeyDown({ code }) {
-    switch (code) {
-        case 'KeyW':
-        case 'ArrowUp':
-            snake.snake.direction = "up" /* Directions.Up */;
-            break;
-        case 'KeyS':
-        case 'ArrowDown':
-            snake.snake.direction = "down" /* Directions.Down */;
-            break;
-        case 'KeyA':
-        case 'ArrowLeft':
-            snake.snake.direction = "left" /* Directions.Left */;
-            break;
-        case 'KeyD':
-        case 'ArrowRight':
-            snake.snake.direction = "right" /* Directions.Right */;
-            break;
-    }
-}
-document.addEventListener('keydown', onKeyDown);
 restart.addEventListener('click', snake.start.bind(snake));
 //# sourceMappingURL=game.js.map
